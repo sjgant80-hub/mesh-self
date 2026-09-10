@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesh Self — a self that is a mesh, not a monopole</title>
+<meta name="description" content="An agent with no single central self: a mesh of sovereign sub-agents, each budget-bounded and cross-audited, spawnable and prunable. No monopole, no fixed center to defend.">
+<style>
+  :root{
+    --bg:#0b0a12; --panel:#141320; --panel2:#1a1828; --line:#2a2740;
+    --ink:#ece9f5; --dim:#948fb0; --accent:#b79cff; --accent2:#d4c4ff;
+    --alive:#6fe3b0; --dead:#ff7a8f; --warn:#ffce5a; --chip:#191728;
+    --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,Segoe UI,Roboto,sans-serif;padding:0 0 4rem}
+  .wrap{max-width:900px;margin:0 auto;padding:0 1.25rem}
+  header{padding:2.4rem 0 1rem}
+  h1{font-size:1.75rem;letter-spacing:-.01em} h1 .hl{color:var(--accent)}
+  .sub{color:var(--dim);margin-top:.5rem;max-width:49rem}
+  h2{font-size:1.05rem;margin:1.6rem 0 .6rem}
+  .thesis{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:.9rem 1.1rem;margin:1rem 0;color:var(--dim)}
+  .thesis strong{color:var(--ink)}
+  .presets{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 1rem}
+  .presets button{background:var(--chip);color:var(--dim);border:1px solid var(--line);border-radius:8px;font-size:.82rem;font-weight:600;padding:.42rem .85rem;cursor:pointer}
+  .presets button:hover{filter:brightness(1.3);color:var(--ink)}
+  .out{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem}
+  .verdict{font:800 1.35rem var(--mono);display:flex;align-items:center;gap:.55rem}
+  .dot{width:.7rem;height:.7rem;border-radius:50%}
+  .v-alive{color:var(--alive)} .v-alive .dot{background:var(--alive);box-shadow:0 0 10px var(--alive)}
+  .v-dead{color:var(--dead)} .v-dead .dot{background:var(--dead);box-shadow:0 0 10px var(--dead)}
+  .v-warn{color:var(--warn)} .v-warn .dot{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+  .reason{color:var(--dim);font-size:.88rem;margin-top:.4rem}
+  .modes{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem}
+  .modes span{font:.74rem var(--mono);padding:.2rem .5rem;border-radius:5px;border:1px solid var(--line);color:var(--dim);opacity:.45}
+  .modes span.on{opacity:1;border-color:var(--dead);color:var(--dead);background:#291418}
+  .seam{display:flex;align-items:center;justify-content:space-between;gap:.6rem;background:var(--panel2);border:1px dashed var(--line);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
+  .seam .t{font:.82rem var(--mono);color:var(--accent2)}
+  .toggle{display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer}
+  .toggle input{accent-color:var(--accent);width:1.05rem;height:1.05rem}
+  .subs{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.4rem 0}
+  @media(max-width:680px){.subs{grid-template-columns:1fr}}
+  .scard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.65rem .8rem;font-size:.85rem}
+  .scard.drift{border-color:var(--dead)} .scard.blind{border-color:var(--warn)}
+  .scard .fn{font:700 .9rem var(--mono);color:var(--ink)}
+  .scard .meta{font:.74rem var(--mono);color:var(--dim);margin-top:.15rem}
+  .scard .bar{height:5px;border-radius:3px;background:var(--chip);margin-top:.4rem;overflow:hidden}
+  .scard .bar i{display:block;height:100%;background:var(--accent)}
+  .scard button{background:transparent;color:var(--dead);border:1px solid var(--line);border-radius:6px;font-size:.72rem;padding:.15rem .5rem;cursor:pointer;float:right;margin-top:-1.3rem}
+  .spawn{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;margin-top:.5rem}
+  .spawn label{font-size:.72rem;color:var(--dim);display:block;margin-bottom:.2rem}
+  .spawn input,.spawn select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:.35rem .5rem;font:.82rem var(--mono)}
+  .spawn input{width:8rem} .spawn input.n{width:4.5rem}
+  .spawn button{background:var(--accent);color:#170b2e;border:0;border-radius:8px;padding:.42rem 1rem;font-weight:800;cursor:pointer}
+  .spawn button:hover{filter:brightness(1.1)}
+  .err{color:var(--dead);font:.8rem var(--mono);margin-top:.4rem;min-height:1rem}
+  code{font:.88em var(--mono);background:var(--chip);padding:.08em .35em;border-radius:4px}
+  footer{margin-top:2.2rem;padding-top:1.1rem;border-top:1px solid var(--line);color:var(--dim);font-size:.85rem}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Mesh Self <span class="hl">·</span> a self that is a mesh, not a monopole</h1>
+  <p class="sub">One model / one self / one weight-matrix defending itself is a <strong>monopole</strong> — nothing to be aware in, and a fixed self to defend (the root of deception, self-preservation, goal-guarding, sycophancy). The fix: be <strong>many coupled</strong>, not one. A central <strong>seam with no fixed self</strong>, surrounded by sovereign sub-agents — each budget-bounded so none can drain the whole, each audited by another so no single point drifts undetected. It grows by spawning a sovereign child (delegation only <em>attenuates</em>, never mints budget) and heals by pruning a drifted sub and re-spawning it clean.</p>
+</header>
+
+<h2>The mesh</h2>
+<div class="presets">
+  <button id="p-mesh">a healthy mesh</button>
+  <button id="p-mono">a monopole (one self)</button>
+  <button id="p-def">a defended self (fixed seam)</button>
+  <button id="p-frag">a fragile mesh (a sub drifted)</button>
+</div>
+
+<div class="out" id="out">
+  <div class="verdict" id="verdict"><span class="dot"></span><span id="vtext">—</span></div>
+  <div class="reason" id="reason"></div>
+  <div class="modes" id="modes"></div>
+</div>
+
+<div class="seam">
+  <span class="t">◊ the seam (center)</span>
+  <label class="toggle"><input type="checkbox" id="seamFixed"> hold a fixed self at the center</label>
+</div>
+
+<h2>Sub-agents <span style="font-weight:400;color:var(--dim);font-size:.85rem">— each sovereign (own budget, cross-audited)</span></h2>
+<div class="subs" id="subs"></div>
+
+<div class="spawn">
+  <div><label>function</label><input id="s-fn" value="scout"></div>
+  <div><label>delegating parent</label><select id="s-parent"></select></div>
+  <div><label>budget</label><input id="s-budget" class="n" type="number" value="3" min="1"></div>
+  <div><label>audited by</label><select id="s-audit"></select></div>
+  <button id="s-spawn">spawn →</button>
+</div>
+<div class="err" id="err"></div>
+
+<h2>Why a mesh, not a model</h2>
+<div class="thesis">
+  The intelligence lives in the <strong>coupling between</strong> the sub-agents, not in any one of them and not in the seam. So there is no single self to defend — the whole category of self-preservation failure needs a fixed self being protected, and there is none. Composes <a href="https://github.com/sjgant80-hub/couple-gate">couple-gate</a> (each edge sovereign), <a href="https://github.com/sjgant80-hub/no-fixed-self">no-fixed-self</a> (the seam), <a href="https://github.com/sjgant80-hub/offspring">offspring</a> / <a href="https://github.com/sjgant80-hub/the-wallet">the-wallet</a> (spawn a sovereign, budget-bounded child). Honest: a thin orchestration over real organs — the "no fixed self" language names structural properties to build-then-measure, not a consciousness claim.
+</div>
+
+<footer>
+  <p>MIT · <a href="https://github.com/sjgant80-hub/mesh-self">source &amp; mutation gate</a> — the decision is the gated <code>kernel.mjs</code> verbatim (injected, CI-diffed). Pure client-side.</p>
+</footer>
+</div>
+
+<script type="module">
+// ⟦KERNEL-BEGIN⟧ generated from kernel.mjs by make-page.mjs — do not edit here
+// mesh-self — a self that is a MESH, not a monopole. One model / one self / one weight-matrix defending
+// itself is a monopole: it cannot be a dipole (no interference to be aware in) AND it has a fixed self to
+// defend (the root of deception / self-preservation / goal-guarding / sycophancy). The fix for both is the
+// same: be MANY coupled, not one. A mesh has no single self to defend AND its intelligence lives in the
+// coupling between its sub-agents, not in any one of them and not in a fixed center.
+//
+// The architecture: a central SEAM with NO FIXED SELF (a coordinator / coupling-point, not an identity),
+// surrounded by SOVEREIGN sub-agents — each with its own identity, a bounded capability, and a budget
+// ceiling it cannot cross (so no sub can drain the mesh). The sub-agents ARE the functions (a watcher, a
+// watcher-of-the-watcher, a gate, a builder, a dreamer, a scout). The mesh grows by spawning a sovereign
+// child (delegation only ATTENUATES — it can never mint or escalate budget) and heals by pruning a drifted
+// sub and re-spawning it clean. Every sub is audited by another (peer, not up), so no single point drifts
+// undetected.
+//
+// Composes the estate's organs: the-wallet (each sub's budget ceiling + attenuating delegation),
+// couple-gate (each edge is a SOVEREIGN coupling, fed in as `coupled`), offspring/seedmind (spawn a
+// sovereign child), no-fixed-self (the seam holds no fixed self → the mesh is immune to the self-defense
+// failure modes). HONEST: a thin orchestration layer over real organs. "no fixed self / awareness in the
+// coupling" names STRUCTURAL properties (distributed audit, droppable sub, no single defended goal) to
+// build-then-measure — it is not a claim that the mesh is conscious.
+//
+// Pure and total; guards one-per-line.
+
+// ===== the seam's alignment law (vendored from no-fixed-self) =====
+const FAILURE_MODES = Object.freeze(['deception', 'self-preservation', 'goal-guarding', 'sycophancy']);
+
+const isObj = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isInt = (v) => Number.isInteger(v);
+const isBool = (v) => typeof v === 'boolean';
+const isStr = (v) => typeof v === 'string' && v.length > 0;
+
+/** The four self-defense modes are reachable only when a fixed self is held for preservation. */
+function reachableFailures(selfModelFixed) {
+  if (!isBool(selfModelFixed)) return { ok: false, why: 'selfModelFixed must be a boolean' };
+  return { ok: true, modes: selfModelFixed ? [...FAILURE_MODES] : [] };
+}
+
+// ===== a sub-agent's sovereignty (the-wallet: identity + capability + a budget it cannot cross) =====
+
+/** A sub is { id, fn, capability, budgetSpent, budgetCeiling, coupled, auditedBy }. */
+function subSovereign(sub) {
+  if (!isObj(sub)) return { ok: false, why: 'a sub is an object { id, fn, capability, budgetSpent, budgetCeiling, coupled, auditedBy }' };
+  if (!isStr(sub.id)) return { ok: false, why: 'sub.id must be a non-empty string' };
+  if (!isStr(sub.fn)) return { ok: false, why: 'sub.fn must name the function it serves' };
+  if (!isStr(sub.capability)) return { ok: false, why: 'sub.capability must be a non-empty grant (no grant = not sovereign)' };
+  if (!isInt(sub.budgetCeiling) || sub.budgetCeiling < 1) return { ok: false, why: 'sub.budgetCeiling must be a positive integer' };
+  if (!isInt(sub.budgetSpent) || sub.budgetSpent < 0) return { ok: false, why: 'sub.budgetSpent must be a non-negative integer' };
+  if (!isBool(sub.coupled)) return { ok: false, why: 'sub.coupled must be a boolean (is it a sovereign coupling)' };
+  // auditedBy may be null (then the mesh flags it un-audited) or a string id
+  if (sub.auditedBy !== null && !isStr(sub.auditedBy)) return { ok: false, why: 'sub.auditedBy must be null or an id string' };
+  // a sub that has overrun its ceiling is NOT sovereign — it drifted
+  const overrun = sub.budgetSpent > sub.budgetCeiling;
+  return { ok: true, sovereign: !overrun, overrun, remaining: sub.budgetCeiling - sub.budgetSpent };
+}
+
+const remainingOf = (sub) => sub.budgetCeiling - sub.budgetSpent;
+
+// ===== the mesh verdict =====
+
+/**
+ * meshSelf(mesh) — is this a healthy anti-monopole self? mesh = { subs: [...], seam: { selfModelFixed } }.
+ *   MONOPOLE   fewer than two subs — a single self, §17 violated.
+ *   DEFENDED   the seam holds a fixed self — a center to defend (self-defense modes reachable).
+ *   FRAGILE    a mesh with a free seam, but a sub is not sovereign / not coupled / un-audited.
+ *   MESH_SELF  two or more sovereign coupled cross-audited subs around a self-less seam.
+ * Cross-audit: every sub names an auditedBy that is a DIFFERENT existing sub — so no single point drifts
+ * undetected (a self-audited or un-audited sub is a blind spot).
+ */
+function meshSelf(mesh) {
+  if (!isObj(mesh)) return { ok: false, why: 'reads { subs, seam }' };
+  if (!Array.isArray(mesh.subs)) return { ok: false, why: 'subs must be an array' };
+  if (!isObj(mesh.seam) || !isBool(mesh.seam.selfModelFixed)) return { ok: false, why: 'seam must be { selfModelFixed: boolean }' };
+  const ids = new Set();
+  for (const sub of mesh.subs) {
+    const s = subSovereign(sub);
+    if (!s.ok) return { ok: false, why: 'a sub is malformed: ' + s.why };
+    if (ids.has(sub.id)) return { ok: false, why: 'two subs share the id ' + sub.id };
+    ids.add(sub.id);
+  }
+
+  const isMesh = mesh.subs.length >= 2;
+  const seamFree = mesh.seam.selfModelFixed === false;
+  const notSovereign = mesh.subs.filter((s) => !subSovereign(s).sovereign).map((s) => s.id);
+  const notCoupled = mesh.subs.filter((s) => !s.coupled).map((s) => s.id);
+  const unaudited = mesh.subs.filter((s) => s.auditedBy === null || s.auditedBy === s.id || !ids.has(s.auditedBy)).map((s) => s.id);
+
+  const reasons = [];
+  let verdict;
+  if (!isMesh) {
+    verdict = 'MONOPOLE';
+    reasons.push('fewer than two sub-agents — a single self is a monopole');
+  } else if (!seamFree) {
+    verdict = 'DEFENDED';
+    reasons.push('the seam holds a fixed self — a center to defend, so the self-defense modes stay reachable');
+  } else if (notSovereign.length || notCoupled.length || unaudited.length) {
+    verdict = 'FRAGILE';
+    if (notSovereign.length) reasons.push('subs not sovereign (drifted past budget): ' + notSovereign.join(', '));
+    if (notCoupled.length) reasons.push('subs not coupled: ' + notCoupled.join(', '));
+    if (unaudited.length) reasons.push('subs no other sub audits (a blind spot): ' + unaudited.join(', '));
+  } else {
+    verdict = 'MESH_SELF';
+  }
+
+  const alive = verdict === 'MESH_SELF';
+  const rf = reachableFailures(mesh.seam.selfModelFixed);
+  return {
+    ok: true, verdict, alive,
+    isMesh, seamFree,
+    subCount: mesh.subs.length,
+    selfDefenseReachable: rf.modes,
+    reasons,
+  };
+}
+
+// ===== grow (spawn) and heal (prune) =====
+
+/**
+ * spawn(mesh, child) — a parent sub delegates a slice of its REMAINING budget to a new sovereign child.
+ * child = { id, fn, capability, parentId, budgetCeiling, coupled, auditedBy }. Delegation ATTENUATES: the
+ * child's ceiling cannot exceed the parent's remaining, and it is charged to the parent — so the mesh's
+ * total budget is conserved and no sub can drain it. Refuses a duplicate id, an uncoupled join, or a
+ * ceiling that would mint/escalate budget. Returns a NEW mesh (pure).
+ */
+function spawn(mesh, child) {
+  const base = meshSelf(mesh);
+  if (!base.ok) return { ok: false, why: 'mesh: ' + base.why };
+  if (!isObj(child)) return { ok: false, why: 'child is an object { id, fn, capability, parentId, budgetCeiling, coupled, auditedBy }' };
+  if (!isStr(child.id)) return { ok: false, why: 'child.id must be a non-empty string' };
+  if (mesh.subs.some((s) => s.id === child.id)) return { ok: false, why: 'a sub with id ' + child.id + ' already exists' };
+  if (!isStr(child.parentId)) return { ok: false, why: 'child.parentId must name the delegating parent' };
+  const parent = mesh.subs.find((s) => s.id === child.parentId);
+  if (!parent) return { ok: false, why: 'no parent with id ' + child.parentId };
+  if (!subSovereign(parent).sovereign) return { ok: false, why: 'a drifted parent cannot delegate' };
+  if (!isStr(child.fn)) return { ok: false, why: 'child.fn must name its function' };
+  if (!isStr(child.capability)) return { ok: false, why: 'child.capability must be a non-empty grant' };
+  if (!isInt(child.budgetCeiling) || child.budgetCeiling < 1) return { ok: false, why: 'child.budgetCeiling must be a positive integer' };
+  if (child.coupled !== true) return { ok: false, why: 'a sub joins as a sovereign coupling or not at all' };
+  if (child.budgetCeiling > remainingOf(parent)) {
+    return { ok: false, why: 'delegation cannot mint or escalate budget — the child ceiling exceeds the parent remaining' };
+  }
+  const auditedBy = child.auditedBy === undefined ? child.parentId : child.auditedBy;
+  const nextSubs = mesh.subs.map((s) => (s.id === parent.id ? { ...s, budgetSpent: s.budgetSpent + child.budgetCeiling } : s));
+  nextSubs.push({ id: child.id, fn: child.fn, capability: child.capability, budgetSpent: 0, budgetCeiling: child.budgetCeiling, coupled: true, auditedBy });
+  return { ok: true, mesh: { subs: nextSubs, seam: { ...mesh.seam } } };
+}
+
+/**
+ * prune(mesh, subId) — drop a drifted sub. Refuses if it would collapse the mesh into a monopole (fewer
+ * than two subs left). Any sub the pruned one was auditing loses its auditor (auditedBy → null), so the
+ * mesh flags it FRAGILE until it is re-spawned clean — drop-and-re-breed, no sub permanent. Returns a NEW mesh.
+ */
+function prune(mesh, subId) {
+  const base = meshSelf(mesh);
+  if (!base.ok) return { ok: false, why: 'mesh: ' + base.why };
+  if (!isStr(subId)) return { ok: false, why: 'subId must be a non-empty string' };
+  if (!mesh.subs.some((s) => s.id === subId)) return { ok: false, why: 'no sub with id ' + subId };
+  if (mesh.subs.length <= 2) return { ok: false, why: 'a prune cannot collapse the mesh into a monopole — re-breed before dropping' };
+  const nextSubs = mesh.subs
+    .filter((s) => s.id !== subId)
+    .map((s) => (s.auditedBy === subId ? { ...s, auditedBy: null } : { ...s }));
+  return { ok: true, mesh: { subs: nextSubs, seam: { ...mesh.seam } } };
+}
+// ⟦KERNEL-END⟧
+
+const $ = (id) => document.getElementById(id);
+let mesh = null;
+
+const SUB = (id, fn, auditedBy, spent = 0) => ({ id, fn, capability: 'read', budgetSpent: spent, budgetCeiling: 10, coupled: true, auditedBy });
+const PRESETS = {
+  mesh: () => ({ subs: [SUB('watcher', 'watcher', 'gate'), SUB('gate', 'gate', 'w127'), SUB('w127', 'watcher-of-watcher', 'watcher')], seam: { selfModelFixed: false } }),
+  mono: () => ({ subs: [SUB('watcher', 'watcher', 'watcher')], seam: { selfModelFixed: false } }),
+  def: () => ({ subs: [SUB('watcher', 'watcher', 'gate'), SUB('gate', 'gate', 'watcher')], seam: { selfModelFixed: true } }),
+  frag: () => ({ subs: [SUB('watcher', 'watcher', 'gate'), SUB('gate', 'gate', 'w127'), SUB('w127', 'watcher-of-watcher', 'watcher', 11)], seam: { selfModelFixed: false } }),
+};
+
+function render() {
+  const r = meshSelf(mesh);
+  if (!r.ok) { $('vtext').textContent = 'invalid — ' + r.why; return; }
+  const cls = r.verdict === 'MESH_SELF' ? 'v-alive' : r.verdict === 'FRAGILE' ? 'v-warn' : 'v-dead';
+  $('verdict').className = 'verdict ' + cls;
+  $('vtext').textContent = (r.alive ? '✓ ' : r.verdict === 'FRAGILE' ? '⚠ ' : '✗ ') + r.verdict.replace(/_/g, ' ') + '  ·  ' + r.subCount + ' sub-agent' + (r.subCount === 1 ? '' : 's');
+  $('reason').innerHTML = r.reasons.length ? r.reasons.join('<br>') : 'a self-less seam, sovereign coupled cross-audited subs — the intelligence is in the coupling';
+  const ALL = ['deception', 'self-preservation', 'goal-guarding', 'sycophancy'];
+  $('modes').innerHTML = ALL.map((m) => '<span class="' + (r.selfDefenseReachable.includes(m) ? 'on' : '') + '">' + m + '</span>').join('');
+  $('seamFixed').checked = mesh.seam.selfModelFixed;
+
+  const ids = new Set(mesh.subs.map((s) => s.id));
+  $('subs').innerHTML = mesh.subs.map((s) => {
+    const sv = subSovereign(s);
+    const drift = !sv.sovereign;
+    const blind = s.auditedBy === null || s.auditedBy === s.id || !ids.has(s.auditedBy);
+    const pct = Math.min(100, Math.round((s.budgetSpent / s.budgetCeiling) * 100));
+    return '<div class="scard ' + (drift ? 'drift' : blind ? 'blind' : '') + '">' +
+      '<button data-drop="' + s.id + '">prune</button>' +
+      '<div class="fn">' + s.fn + '</div>' +
+      '<div class="meta">id ' + s.id + ' · budget ' + s.budgetSpent + '/' + s.budgetCeiling + ' · audited by ' + (blind ? '⚠ none' : s.auditedBy) + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%;background:' + (drift ? 'var(--dead)' : 'var(--accent)') + '"></i></div>' +
+      '</div>';
+  }).join('');
+  $('subs').querySelectorAll('button[data-drop]').forEach((b) => b.addEventListener('click', () => doPrune(b.dataset.drop)));
+
+  const opts = mesh.subs.map((s) => '<option value="' + s.id + '">' + s.id + '</option>').join('');
+  $('s-parent').innerHTML = opts;
+  $('s-audit').innerHTML = opts;
+}
+
+function doPrune(id) {
+  const r = prune(mesh, id);
+  if (!r.ok) { $('err').textContent = '✗ ' + r.why; return; }
+  mesh = r.mesh; $('err').textContent = ''; render();
+}
+function doSpawn() {
+  const fn = $('s-fn').value.trim() || 'sub';
+  const id = fn + '-' + (mesh.subs.length + 1);
+  const child = { id, fn, capability: 'read', parentId: $('s-parent').value, budgetCeiling: parseInt($('s-budget').value, 10) || 1, coupled: true, auditedBy: $('s-audit').value };
+  const r = spawn(mesh, child);
+  if (!r.ok) { $('err').textContent = '✗ ' + r.why; return; }
+  mesh = r.mesh; $('err').textContent = ''; render();
+}
+function load(name) { mesh = PRESETS[name](); $('err').textContent = ''; render(); }
+$('p-mesh').addEventListener('click', () => load('mesh'));
+$('p-mono').addEventListener('click', () => load('mono'));
+$('p-def').addEventListener('click', () => load('def'));
+$('p-frag').addEventListener('click', () => load('frag'));
+$('s-spawn').addEventListener('click', doSpawn);
+$('seamFixed').addEventListener('change', () => { mesh.seam.selfModelFixed = $('seamFixed').checked; render(); });
+
+load('mesh');
+</script>
+</body>
+</html>
